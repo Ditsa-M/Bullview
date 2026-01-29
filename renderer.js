@@ -20,7 +20,14 @@ export class DNARenderer {
         this.bondMeshes = [];
         this.bondMeshes = [];
         this.patchMeshes = [];
+        this.bondMeshes = [];
+        this.patchMeshes = [];
         this.selectionMeshes = new Map();
+        this.boxMesh = null;
+
+        // PBC and Interaction State
+        this.boxOffset = new BABYLON.Vector3(0, 0, 0);
+        this.originalParticlePositions = []; // Store source truth
 
         // Materials
         this.nucleotideMaterial = null;
@@ -130,6 +137,12 @@ export class DNARenderer {
         // Clear existing meshes
         this.clearScene();
 
+        // Reset offset
+        this.boxOffset = new BABYLON.Vector3(0, 0, 0);
+
+        // Store original positions for PBC calculations
+        this.originalParticlePositions = combinedData.particles.map(p => p.position.clone());
+
         // Calculate center and adjust camera
         const positions = combinedData.particles.map(p => p.position);
         const center = VectorUtils.calculateCenterOfMass(positions);
@@ -143,6 +156,11 @@ export class DNARenderer {
         // Render particles and bonds
         this.renderNucleotides(combinedData.particles);
         this.renderBonds(combinedData.bonds, combinedData.particles);
+
+        // Render bounding box
+        if (combinedData.metadata && combinedData.metadata.box) {
+            this.renderBoundingBox(combinedData.metadata.box);
+        }
 
         console.log(`Loaded ${combinedData.particles.length} particles and ${combinedData.bonds.length} bonds`);
     }
@@ -254,6 +272,42 @@ export class DNARenderer {
             lineSystem.isPickable = false;
             this.bondMeshes.push(lineSystem);
         }
+        if (points.length > 0) {
+            const lineSystem = BABYLON.MeshBuilder.CreateLineSystem(
+                'bonds',
+                { lines: points, colors: colors },
+                this.scene
+            );
+            lineSystem.isPickable = false;
+            this.bondMeshes.push(lineSystem);
+        }
+    }
+
+    /**
+     * Render simulation bounding box
+     */
+    renderBoundingBox(box) {
+        if (!box) return;
+
+        // Create box mesh
+        this.boxMesh = BABYLON.MeshBuilder.CreateBox('simulationBox', {
+            width: box.x,
+            height: box.y,
+            depth: box.z
+        }, this.scene);
+
+        // Position at center (0 to L) => center at L/2
+        this.boxMesh.position = new BABYLON.Vector3(box.x / 2, box.y / 2, box.z / 2);
+
+        // Create wireframe material
+        const material = new BABYLON.StandardMaterial('boxMat', this.scene);
+        material.diffuseColor = new BABYLON.Color3(1.0, 1.0, 1.0);
+        material.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+        material.wireframe = true;
+        material.disableLighting = true;
+
+        this.boxMesh.material = material;
+        this.boxMesh.isPickable = false;
     }
 
     /**
@@ -275,6 +329,12 @@ export class DNARenderer {
         // Dispose selection meshes
         this.selectionMeshes.forEach(mesh => mesh.dispose());
         this.selectionMeshes.clear();
+
+        // Dispose box mesh
+        if (this.boxMesh) {
+            this.boxMesh.dispose();
+            this.boxMesh = null;
+        }
     }
 
     /**
@@ -355,6 +415,132 @@ export class DNARenderer {
     }
 
     /**
+     * Set camera speed properties
+     * speed: 1-100
+     */
+    setCameraSpeed(speed) {
+        if (!this.camera) return;
+
+        // Base values
+        const basePanning = 50;
+        const baseWheel = 50;
+
+        // Calculate multipliers (speed 50 is default/1x)
+        const factor = speed / 50;
+
+        this.camera.panningSensibility = basePanning / factor; // Higher sensibility value = slower speed
+        this.camera.wheelPrecision = baseWheel / factor; // Higher precision = slower speed
+        this.camera.angularSensibilityX = 1000 / factor;
+        this.camera.angularSensibilityY = 1000 / factor;
+    }
+
+    /**
+     * Shift particles (move box state)
+     */
+    shiftParticles(axis, amount) {
+        if (!this.data || !this.data.metadata.box) return;
+
+        if (axis === 'x') this.boxOffset.x += amount;
+        if (axis === 'y') this.boxOffset.y += amount;
+        if (axis === 'z') this.boxOffset.z += amount;
+
+        this.updateParticlePositions();
+    }
+
+    /**
+     * Update particle positions based on PBC and offset
+     */
+    updateParticlePositions() {
+        if (!this.data || !this.data.metadata.box) return;
+
+        const box = this.data.metadata.box;
+
+        // Helper for wrapping
+        const wrap = (val, max) => {
+            let res = val % max;
+            if (res < 0) res += max;
+            return res;
+        };
+
+        // Update each particle instance
+        this.nucleotideInstances.forEach((instance, i) => {
+            const originalPos = this.originalParticlePositions[i];
+
+            // Calculate new position
+            const newX = wrap(originalPos.x + this.boxOffset.x, box.x);
+            const newY = wrap(originalPos.y + this.boxOffset.y, box.y);
+            const newZ = wrap(originalPos.z + this.boxOffset.z, box.z);
+
+            instance.position.x = newX;
+            instance.position.y = newY;
+            instance.position.z = newZ;
+
+            // Update associated selection mesh if exists
+            const particleIndex = instance.metadata.particle.index;
+            if (this.selectionMeshes.has(particleIndex)) {
+                const selMesh = this.selectionMeshes.get(particleIndex);
+                selMesh.position.copyFrom(instance.position);
+            }
+        });
+
+        // Update bond positions
+        // We need to rebuild the line system or update its vertices
+        if (this.bondMeshes.length > 0) {
+            // Gather new points
+            const points = [];
+            this.data.bonds.forEach(bond => {
+                const fromParticle = this.nucleotideInstances.find(inst => inst.metadata.particle.index === bond.from);
+                const toParticle = this.nucleotideInstances.find(inst => inst.metadata.particle.index === bond.to);
+
+                if (fromParticle && toParticle) {
+                    points.push([fromParticle.position, toParticle.position]);
+                }
+            });
+
+            // We have multiple line systems (one per batch of lines usually, but here we made all in one go or multiple)
+            // The renderBonds function creates one or more meshes.
+            // Simplest way: dispose old bonds and create new ones. Updating LineSystem instance is complex if topology differs (it shouldn't here but easier to just recreate for reliability first).
+            // Actually, LineSystem update is efficient. Let's try to update the first one if it exists, assuming all bonds are in one mesh (which they are in renderBonds unless huge).
+
+            // Re-creating is safer to avoid "lines mismatch" errors if logic was complex.
+            // Let's defer to clearing and re-rendering bonds.
+            this.bondMeshes.forEach(m => m.dispose());
+            this.bondMeshes = [];
+
+            // Re-render bonds with current positions
+            // We can't reuse renderBonds easily because it uses original data which has original positions.
+            // We need to use the INSTANCE positions.
+
+            const colors = [];
+            // Re-create points array from current instance positions
+            this.data.bonds.forEach(bond => {
+                const colorsForBond = [];
+                const color = new BABYLON.Color4(0.5, 0.5, 0.5, 0.6);
+                colors.push([color, color]);
+            });
+
+            if (points.length > 0) {
+                const lineSystem = BABYLON.MeshBuilder.CreateLineSystem(
+                    'bonds',
+                    { lines: points, colors: colors, updatable: true },
+                    this.scene
+                );
+                lineSystem.isPickable = false;
+                this.bondMeshes.push(lineSystem);
+            }
+        }
+    }
+
+    /**
+     * Set simulation box visibility
+     */
+    setBoxVisibility(visible) {
+        if (this.boxMesh) {
+            this.boxMesh.isVisible = visible;
+        }
+    }
+
+    /**
      * Dispose renderer
      */
     dispose() {
@@ -367,3 +553,4 @@ export class DNARenderer {
         }
     }
 }
+

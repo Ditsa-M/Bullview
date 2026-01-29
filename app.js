@@ -204,9 +204,51 @@ export class DNAVisualizerApp {
         });
 
         // Load example files button
+        // Load example files button
         document.getElementById('loadExampleBtn').addEventListener('click', async () => {
             await this.loadExampleFiles();
         });
+
+        // Camera Speed Slider
+        const slider = document.getElementById('cameraSpeedSlider');
+        const valueDisplay = document.getElementById('cameraSpeedValue');
+
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const speed = parseInt(e.target.value);
+                valueDisplay.textContent = speed;
+                this.renderer.setCameraSpeed(speed);
+            });
+        }
+
+        // View Option Toggles
+        const togglePanels = document.getElementById('togglePanels');
+        if (togglePanels) {
+            togglePanels.addEventListener('change', (e) => {
+                const show = e.target.checked;
+                this.ui.infoPanel.style.display = show ? 'block' : 'none';
+                this.ui.statsPanel.style.display = show ? 'block' : 'none';
+                const quickTips = document.querySelector('.instructions');
+                if (quickTips) quickTips.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        const toggleBox = document.getElementById('toggleBox');
+        if (toggleBox) {
+            toggleBox.addEventListener('change', (e) => {
+                this.renderer.setBoxVisibility(e.target.checked);
+            });
+        }
+
+        // Main Controls Toggle Button
+        const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+        const controlsPanel = document.getElementById('controls');
+        if (toggleControlsBtn && controlsPanel) {
+            toggleControlsBtn.addEventListener('click', () => {
+                controlsPanel.classList.toggle('hidden');
+                // Optional: Change icon or style when hidden
+            });
+        }
     }
 
     /**

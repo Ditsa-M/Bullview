@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DNA Structure Visualizer</title>
-    <meta name="description" content="Interactive 3D DNA structure visualization using Babylon.js with GPU acceleration">
-    
+    <meta name="description"
+        content="Interactive 3D DNA structure visualization using Babylon.js with GPU acceleration">
+
     <!-- Babylon.js -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    
+
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- Main Container -->
     <div id="app">
@@ -29,10 +32,10 @@
             </div>
             <div id="statsPanel" class="stats-panel"></div>
         </header>
-        
+
         <!-- Canvas for 3D rendering -->
         <canvas id="renderCanvas"></canvas>
-        
+
         <!-- Drop Zone -->
         <div id="dropZone" class="drop-zone">
             <div class="drop-zone-content">
@@ -47,7 +50,12 @@
                 <button id="loadExampleBtn" class="example-btn">Load Example Files</button>
             </div>
         </div>
-        
+
+        <!-- Control Panel Toggle -->
+        <button id="toggleControlsBtn" class="toggle-controls-btn" title="Toggle Controls">
+            ⚙️
+        </button>
+
         <!-- Control Panel -->
         <div id="controls" class="control-panel">
             <div class="control-group">
@@ -56,55 +64,78 @@
                     <span class="icon">🎯</span> Reset Camera
                 </button>
             </div>
-            
+
             <div class="control-group">
-                <h3>Selection</h3>
-                <button id="clearSelectionBtn" class="btn">
-                    <span class="icon">✖️</span> Clear Selection
-                </button>
-                <p class="hint">Ctrl/Cmd + Click for multi-select</p>
+                <h3>View Options</h3>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="togglePanels" checked>
+                    Show UI Panels
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="toggleBox" checked>
+                    Show Simulation Box
+                </label>
             </div>
-            
+
             <div class="control-group">
-                <h3>Export</h3>
-                <button id="exportImageBtn" class="btn btn-primary">
-                    <span class="icon">📸</span> Export Image
-                </button>
-                <button id="exportVideoBtn" class="btn btn-primary">
-                    <span class="icon">🎥</span> Export Video
-                </button>
+
+                <div class="control-group">
+                    <h3>Camera Speed</h3>
+                    <div class="slider-container">
+                        <input type="range" id="cameraSpeedSlider" min="1" max="100" value="50" class="slider">
+                        <span id="cameraSpeedValue">50</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Selection</h3>
+                    <button id="clearSelectionBtn" class="btn">
+                        <span class="icon">✖️</span> Clear Selection
+                    </button>
+                    <p class="hint">Ctrl/Cmd + Click for multi-select</p>
+                </div>
+
+                <div class="control-group">
+                    <h3>Export</h3>
+                    <button id="exportImageBtn" class="btn btn-primary">
+                        <span class="icon">📸</span> Export Image
+                    </button>
+                    <button id="exportVideoBtn" class="btn btn-primary">
+                        <span class="icon">🎥</span> Export Video
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div id="infoPanel" class="info-panel">
+                <div id="structureInfo">
+                    <h3>Structure Information</h3>
+                    <p>Load files to see structure details</p>
+                </div>
+
+                <div id="selectionInfo">
+                    <p>No particles selected</p>
+                </div>
+            </div>
+
+            <!-- Message Toast -->
+            <div id="message" class="message"></div>
+
+            <!-- Instructions -->
+            <div class="instructions">
+                <h4>💡 Quick Tips</h4>
+                <ul>
+                    <li><strong>Rotate:</strong> Left-click + drag</li>
+                    <li><strong>Pan:</strong> Right-click + drag</li>
+                    <li><strong>Zoom:</strong> Mouse wheel</li>
+                    <li><strong>Select:</strong> Click on nucleotides</li>
+                    <li><strong>Multi-select:</strong> Ctrl/Cmd + Click</li>
+                </ul>
             </div>
         </div>
-        
-        <!-- Info Panel -->
-        <div id="infoPanel" class="info-panel">
-            <div id="structureInfo">
-                <h3>Structure Information</h3>
-                <p>Load files to see structure details</p>
-            </div>
-            
-            <div id="selectionInfo">
-                <p>No particles selected</p>
-            </div>
-        </div>
-        
-        <!-- Message Toast -->
-        <div id="message" class="message"></div>
-        
-        <!-- Instructions -->
-        <div class="instructions">
-            <h4>💡 Quick Tips</h4>
-            <ul>
-                <li><strong>Rotate:</strong> Left-click + drag</li>
-                <li><strong>Pan:</strong> Right-click + drag</li>
-                <li><strong>Zoom:</strong> Mouse wheel</li>
-                <li><strong>Select:</strong> Click on nucleotides</li>
-                <li><strong>Multi-select:</strong> Ctrl/Cmd + Click</li>
-            </ul>
-        </div>
-    </div>
-    
-    <!-- App Scripts (ES Modules) -->
-    <script type="module" src="app.js"></script>
+
+        <!-- App Scripts (ES Modules) -->
+        <script type="module" src="app.js"></script>
 </body>
+
 </html>

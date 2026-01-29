@@ -26,6 +26,21 @@ export class InteractionManager {
             this.handleClick(event);
         });
 
+        // Load example files button
+        document.getElementById('loadExampleBtn').addEventListener('click', async () => {
+            await this.loadExampleFiles();
+        });
+
+        // Camera Speed Slider
+        const slider = document.getElementById('cameraSpeedSlider');
+        const valueDisplay = document.getElementById('cameraSpeedValue');
+
+        slider.addEventListener('input', (e) => {
+            const speed = parseInt(e.target.value);
+            valueDisplay.textContent = speed;
+            this.renderer.setCameraSpeed(speed);
+        });
+
         // Mouse move for hover
         canvas.addEventListener('mousemove', (event) => {
             this.handleMouseMove(event);
@@ -48,6 +63,26 @@ export class InteractionManager {
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 this.clearSelection();
+            }
+        });
+
+        // Box Shifting (x, y, z)
+        window.addEventListener('keydown', (event) => {
+            const amount = 1.0; // Shift speed
+
+            // Check for shift key for negative direction
+            const direction = event.shiftKey ? -1 : 1;
+
+            switch (event.key.toLowerCase()) {
+                case 'x':
+                    this.renderer.shiftParticles('x', amount * direction);
+                    break;
+                case 'y':
+                    this.renderer.shiftParticles('y', amount * direction);
+                    break;
+                case 'z':
+                    this.renderer.shiftParticles('z', amount * direction);
+                    break;
             }
         });
     }

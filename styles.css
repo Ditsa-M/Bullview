@@ -1,4 +1,4 @@
-/* DNA Visualizer Styles */
+/* DNA Visualizer Styles - v1.1 */
 
 * {
     margin: 0;
@@ -21,25 +21,25 @@
     --error: #ef4444;
     --warning: #f59e0b;
     --info: #3b82f6;
-    
+
     /* Glassmorphism */
     --glass-bg: rgba(30, 35, 53, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    
+
     /* Spacing */
     --spacing-xs: 0.5rem;
     --spacing-sm: 0.75rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
-    
+
     /* Border Radius */
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     --radius-xl: 1rem;
-    
+
     /* Transitions */
     --transition-fast: 150ms ease-in-out;
     --transition-normal: 250ms ease-in-out;
@@ -149,8 +149,15 @@ header {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .drop-zone h2 {
@@ -227,7 +234,48 @@ header {
     padding: var(--spacing-lg);
     box-shadow: var(--glass-shadow);
     z-index: 40;
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
 }
+
+.control-panel.hidden {
+    transform: translateX(120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toggle-controls-btn {
+    position: absolute;
+    top: 100px;
+    right: var(--spacing-lg);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: var(--glass-shadow);
+    z-index: 41;
+    /* Above control panel */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+}
+
+.toggle-controls-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+    transform: rotate(90deg);
+}
+
+/* Adjust toggle position when panel is visible (optional, but keeping it static is simpler) */
+/* If we want the button to move with the panel, we can position it relative to the panel, 
+   but absolute fixed position is more robust for "show/hide" UI. 
+   The button stays, the panel slides away. */
 
 .control-group {
     margin-bottom: var(--spacing-lg);
@@ -299,9 +347,9 @@ header {
 .info-panel {
     position: absolute;
     bottom: var(--spacing-lg);
-    left: var(--spacing-lg);
-    width: 300px;
-    max-height: 400px;
+    right: var(--spacing-lg);
+    width: 250px;
+    max-height: 300px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -379,6 +427,7 @@ header {
         opacity: 0;
         transform: translateX(-50%) translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -408,9 +457,10 @@ header {
 /* Instructions */
 .instructions {
     position: absolute;
-    bottom: var(--spacing-lg);
+    top: 520px;
+    /* Below control panel */
     right: var(--spacing-lg);
-    width: 300px;
+    width: 250px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -460,7 +510,7 @@ header {
         flex-direction: column;
         gap: var(--spacing-sm);
     }
-    
+
     .control-panel,
     .info-panel,
     .instructions {
@@ -471,7 +521,7 @@ header {
         bottom: 0;
         margin: var(--spacing-md);
     }
-    
+
     .drop-zone {
         width: 95%;
         padding: var(--spacing-lg);
@@ -480,9 +530,12 @@ header {
 
 /* Animations */
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -490,4 +543,22 @@ header {
 
 .loading {
     animation: pulse 1.5s ease-in-out infinite;
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    cursor: pointer;
 }
